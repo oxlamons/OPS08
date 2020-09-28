@@ -17,7 +17,7 @@ resource "hcloud_ssh_key" "anton" {
 
 resource "hcloud_server" "node1" {
   name        = "${element(var.domains, count.index)}.oxlamons.devops.rebrain.srwx.net"
-  count       = "${length(var.domains)}"
+  count       = length(var.domains)
   image       = "ubuntu-18.04"
   server_type = "cx11"
   ssh_keys = [hcloud_ssh_key.anton.id,
@@ -30,27 +30,27 @@ resource "hcloud_server" "node1" {
 
 # Create a new provider using the SSH key
 provider "aws" {
-  access_key = "${var.access_key}"
-  secret_key = "${var.secret_key}"
-  region     = "${var.aws_region}"
+  access_key = var.access_key
+  secret_key = var.secret_key
+  region     = var.aws_region
 }
 data "aws_route53_zone" "selected" {
   name = "devops.rebrain.srwx.net"
 }
 resource "aws_route53_record" "www" {
-  count   = 1
+  count   = length(var.domains)
   zone_id = data.aws_route53_zone.selected.zone_id
   name    = "oxlamons.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "300"
-  records = ["${element(hcloud_server.node1.*.ipv4_address[count.index]}"]
-
+  records = ["${element(hcloud_server.node1.*.ipv4_address, count.index)}"]
 }
 output "server_ip_node1" {
-  value = hcloud_server.node1.ipv4_address
+  value = "hcloud_server.node1.*.ipv4_address, count.index"
 }
-output "server_id_node1" {
-  value       = hcloud_server.node1.id
-  description = "ID"
 
+output "server_id_node1" {
+  value       = "hcloud_server.node1.id, count.index"
+  description = "ID"
 }
+
